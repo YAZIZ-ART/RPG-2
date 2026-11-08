@@ -9,8 +9,9 @@
 #sk button{pointer-events:auto;width:46px;height:50px;padding:2px;font:6px/1.3 'Press Start 2P',monospace;color:#fff;border:2px solid var(--c,#f2c14e);background:#0d1f17ee;position:relative;overflow:hidden}
 #sk button.lock{opacity:.4}#sk button b{display:block;font-size:8px;color:var(--c)}
 #sk button u{position:absolute;left:0;bottom:0;width:100%;background:#000a;text-decoration:none;height:0}
-#atk,#grd{position:absolute;pointer-events:auto;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 130px);width:72px;height:72px;border-radius:50%;font:7px 'Press Start 2P',monospace;background:#a84e08;border:3px solid #ffd860;color:#fff}
-#grd{right:92px;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);width:56px;height:56px;background:#2a3a8a;border-color:#8ab0ff;display:none}
+#atk,#grd,#dash{position:absolute;pointer-events:auto;right:16px;top:50%;transform:translateY(-50%);width:72px;height:72px;border-radius:50%;font:7px 'Press Start 2P',monospace;background:#a84e08;border:3px solid #ffd860;color:#fff}
+#grd{right:98px;top:calc(50% + 48px);width:52px;height:52px;background:#2a3a8a;border-color:#8ab0ff;display:none}
+#dash{right:24px;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:none;width:58px;height:58px;background:#245b91;border-color:#83d5ff;font-size:6px}
 #msg{position:absolute;inset:0;display:none;place-items:center;background:#000b;pointer-events:auto}
 #msg.on{display:grid}#mb{position:static;text-align:center;font-size:9px;line-height:2;max-width:86%}
 #mb button{margin-top:10px;font:inherit;padding:8px 12px;background:#a84e08;color:#fff;border:2px solid #ffd860;cursor:pointer}
@@ -19,7 +20,18 @@
  #st{top:52px;left:5px;width:126px;padding:4px 6px}
  #sk{bottom:5px;gap:4px}
  #sk button{width:42px;height:42px;font-size:5px}
- #atk{right:8px;bottom:58px;width:60px;height:60px}
- #grd{right:76px;bottom:52px;width:48px;height:48px}
+ #atk{right:8px;top:50%;width:62px;height:62px}
+ #dash{right:12px;bottom:12px;width:50px;height:50px}
+ #grd{right:76px;top:calc(50% + 42px);width:44px;height:44px}
  #boss{top:5px;width:160px}
+}
+
+/* Combat controls: attack at mid-right, dash at lower-right */
+#atk{z-index:4;right:18px;top:50%;bottom:auto;transform:translateY(-50%);width:76px;height:76px}
+#dash{z-index:4;right:26px;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);width:58px;height:58px;transform:none}
+#grd{z-index:4}
+#sk{z-index:3}
+@media (max-height:430px){
+ #atk{right:12px;top:50%;width:62px;height:62px}
+ #dash{right:16px;bottom:10px;width:48px;height:48px}
 }
