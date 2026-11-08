@@ -73,7 +73,7 @@ function build(seed){
   const i=ty*W+tx,t=ter[i];if(blk[i])continue;
   const r=R(),edge=Math.min(tx,ty,W-1-tx,H-1-ty);
   if(t===3||t===4){
-   let p=noT[i]?0:cl((fb(N2,tx*.08+9,ty*.08+9)-.3)*1.5,0,.75)*(1-cA[i]*.97)+(t===4?.08:0);
+   let p=(noT[i]?0:cl((fb(N2,tx*.08+9,ty*.08+9)-.3)*1.5,0,.75)*(1-cA[i]*.97)+(t===4?.08:0))*.62;
    if(edge<4)p=.9;
    if(r<p&&!near(tx,ty,1)){const q=R();
     if(t===4&&q<.1&&!near(tx,ty,2)){add(SP.giant,tx,ty,{sh:SP.shG,c:1,k:.7,tr:2})}
@@ -126,7 +126,7 @@ function build(seed){
 /* ===== TAMPILAN ===== */
 const cvs=$('c'),ctx=cvs.getContext('2d'),
 buf=cv(8,8),g=buf.getContext('2d'),ZT=[420,420,420,420,420];
-let zi=2,dpr=1,cw=0,ch=0,S=3,bw=0,bh=0,sx=0,sy=0,tm=0,last=0,mi=0,ph=0,auto=false,joy=null;
+let zi=2,dpr=1,cw=0,ch=0,S=3,bw=0,bh=0,sx=0,sy=0,tm=0,last=0,mi=0,ph=0,auto=false,joy=null,dashTime=0,dashCd=0,lastVX=1,lastVY=0,camX=0,camY=0,camReady=false;
 const PH=[{n:'SIANG',m:[255,255,255],nt:0,sh:.5},{n:'PAGI',m:[255,214,182],nt:0,sh:1},{n:'SENJA',m:[255,164,110],nt:.15,sh:.6},{n:'MALAM',m:[70,96,170],nt:1,sh:0}];
 const cur={m:[255,255,255],nt:0,sh:.5};
 const FF=Array.from({length:40},()=>({x:Math.random(),y:Math.random(),a:Math.random()*6.28,v:.02+Math.random()*.03,p:Math.random()*6}));
@@ -155,13 +155,25 @@ function upd(dt){
  let vx=(K.KeyD||K.ArrowRight?1:0)-(K.KeyA||K.ArrowLeft?1:0),vy=(K.KeyS||K.ArrowDown?1:0)-(K.KeyW||K.ArrowUp?1:0),mg=1;
  if(vx||vy){const l=Math.hypot(vx,vy);vx/=l;vy/=l}
  else if(joy){const dx=joy.x-joy.ox,dy=joy.y-joy.oy,l=Math.hypot(dx,dy);if(l>6){mg=Math.min(1,l/44);vx=dx/l;vy=dy/l}}
+ if(vx||vy){lastVX=vx;lastVY=vy}
+ dashCd=Math.max(0,dashCd-dt);dashTime=Math.max(0,dashTime-dt);window.dashActive=dashTime>0;
+ if((window.dashRequest||K.ShiftLeft||K.ShiftRight)&&dashCd<=0){
+  window.dashRequest=0;dashTime=.17;dashCd=.85;
+  if(!vx&&!vy){vx=lastVX;vy=lastVY}
+  const l=Math.hypot(vx,vy)||1;vx/=l;vy/=l;lastVX=vx;lastVY=vy;
+  window.AETH_AUDIO&&window.AETH_AUDIO.dash&&window.AETH_AUDIO.dash();
+ }
  let sp=0;
- if(vx||vy){sp=58*(window.moveMul?window.moveMul():1)*mg*(K.ShiftLeft||K.ShiftRight?1.7:1);const i=(Math.floor(P.y)>>4)*W+(Math.floor(P.x)>>4);if(ter[i]===1)sp*=.6;
-  const nx=P.x+vx*sp*dt,ny=P.y+vy*sp*dt;if(walk(nx,P.y))P.x=nx;if(walk(P.x,ny))P.y=ny;
-  P.d=Math.abs(vx)>Math.abs(vy)?(vx<0?2:3):(vy<0?1:0);P.st+=sp*dt*.2}
+ if(vx||vy){sp=58*(window.moveMul?window.moveMul():1)*mg*(dashTime>0?3.05:1);const i=(Math.floor(P.y)>>4)*W+(Math.floor(P.x)>>4);if(ter[i]===1)sp*=.6;
+  const nx=P.x+vx*sp*dt,ny=P.y+vy*sp*dt;
+  // Sub-step collision prevents jitter and snagging at tile corners.
+  const steps=Math.max(1,Math.ceil(Math.max(Math.abs(nx-P.x),Math.abs(ny-P.y))/3));
+  for(let k=0;k<steps;k++){const tx=P.x+(nx-P.x)/steps,ty=P.y+(ny-P.y)/steps;if(walk(tx,P.y,5))P.x=tx;if(walk(P.x,ty,5))P.y=ty}
+  P.d=Math.abs(vx)>Math.abs(vy)?(vx<0?2:3):(vy<0?1:0);P.st+=sp*dt*.11}
  P.mv=sp>0;
  if(auto)ph=[1,0,2,3][Math.floor(tm/12)%4];
- const tg=PH[ph],a=Math.min(1,dt*2.5);cur.m=cur.m.map((v,i)=>v+(tg.m[i]-v)*a);cur.nt+=(tg.nt-cur.nt)*a;cur.sh+=(tg.sh-cur.sh)*a}
+ const tg=PH[ph],a=Math.min(1,dt*2.5);cur.m=cur.m.map((v,i)=>v+(tg.m[i]-v)*a);cur.nt+=(tg.nt-cur.nt)*a;cur.sh+=(tg.sh-cur.sh)*a
+}
 function dp(){window.drawHero&&window.drawHero(g,Math.round(P.x-sx),Math.round(P.y-sy),P)}
 const lb=y=>{let a=0,b=OB.length;while(a<b){const m=(a+b)>>1;if(OB[m].y<y)a=m+1;else b=m}return a};
 function dob(o){const s=o.s,ax=s.ax??(s.width>>1),x=o.x-ax-sx,y=o.y-s.height+1-sy;
@@ -173,7 +185,7 @@ function dm(c){const k=c.width/W,q=c.getContext('2d');q.imageSmoothingEnabled=fa
  q.strokeStyle='rgba(255,255,255,.55)';q.lineWidth=1;q.strokeRect(sx/T*k,sy/T*k,bw/T*k,bh/T*k);
  if(((tm*2)|0)%2===0){q.fillStyle='#ff4060';q.fillRect(P.x/T*k-1.5,P.y/T*k-1.5,3,3)}}
 function draw(dt){
- sx=bw>=WW?(WW-bw)>>1:cl(Math.round(P.x-bw/2),0,WW-bw);sy=bh>=WH?(WH-bh)>>1:cl(Math.round(P.y-bh/2),0,WH-bh);
+ const tx=bw>=WW?(WW-bw)>>1:cl(P.x-bw/2,0,WW-bw),ty=bh>=WH?(WH-bh)>>1:cl(P.y-bh/2,0,WH-bh);if(!camReady){camX=tx;camY=ty;camReady=true}const ca=1-Math.exp(-dt*9);camX+=(tx-camX)*ca;camY+=(ty-camY)*ca;sx=Math.round(camX);sy=Math.round(camY);
  g.fillStyle='#0a1a10';g.fillRect(0,0,bw,bh);g.drawImage(wc,sx,sy,bw,bh,0,0,bw,bh);
  const t0=sx>>4,t1=(sx+bw)>>4,u0=sy>>4,u1=(sy+bh)>>4;
  for(let ty=Math.max(0,u0);ty<=Math.min(H-1,u1);ty++)for(let tx=Math.max(0,t0);tx<=Math.min(W-1,t1);tx++){const i=ty*W+tx;if(ter[i]>1)continue;
