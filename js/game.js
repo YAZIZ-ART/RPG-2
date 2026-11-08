@@ -11,7 +11,7 @@ const list=[];FX.E.forEach((e,i)=>{if(e[1].split(' + ').some(x=>NE[x]==CH[2]))li
 const kIdx=C.slice(0,ci).filter(c=>c[2]==CH[2]).length,SL=[0,1,2,3,4].map(j=>list[(kIdx*4+j)%list.length]);
 const UNL=[1,3,6,10,15],COST=[10,16,22,30,40],CD=[3,5,7,10,14],POW=[1.6,2.2,3,4,5.5];
 const TYP={'Nadi Kehidupan':'heal','Hujan':'heal','Pelangi':'heal','Tembok Batu':'guard','Titan Mekanik':'guard','Es':'stun','Medan Listrik':'stun','Tornado Petir':'stun','Lumpur':'slow','Banjir Bandang':'slow','Kabut Ilusi':'slow','Fatamorgana':'slow','Tsunami':'slow'};
-const H={hp:100,mp:50,lv:1,xp:0,dir:1,at:-1,dur:.2,cd:0,hit:0,inv:0,shield:0,guard:false,hits:0,buffT:0,still:0,comboN:0,comboT:0,brk:0,dodge:0,back:0,sk:[0,0,0,0,0],dead:0,kills:0,bosses:0};
+const H={hp:100,mp:50,lv:1,xp:0,dir:1,at:-1,dur:.2,cd:0,hit:0,inv:0,shield:0,guard:false,hits:0,buffT:0,still:0,comboN:0,comboT:0,brk:0,dodge:0,back:0,sk:[0,0,0,0,0],dead:0,kills:0,bosses:0,target:null};
 const maxHp=()=>100+H.lv*16,maxMp=()=>50+H.lv*6,bd=()=>12+H.lv*4.2;
 const M=[],PR=[],EP=[],FXL=[],PT=[],FT=[];let tmx=0,start={x:P.x,y:P.y};
 /* ---- statistik dari passive (buff + debuff) ---- */
@@ -52,18 +52,18 @@ function deal(m,amt,o={}){if(m.dead)return;const s=stats();let crit=Math.random(
  if(m.hp<=0){m.dead=1;m.rt=m.boss?0:25;H.kills++;gain(m.xp);burst(m.x,m.y-8,18,EC[0],3);
   if(ci==9)H.hp=Math.min(maxHp(),H.hp+maxHp()*.03*s.heal);if(m.boss){H.bosses++;text(m.x,m.y-30,'BOS KALAH!','#ffd23a');if(H.bosses>=3)setTimeout(()=>msg('<b>AETHERIA TERSELAMATKAN!</b><br>Ketiga bos telah kalah.<br><button onclick="location.href=\'index.html\'">MENU UTAMA</button>'),1500)}}}
 function gain(x){H.xp+=x;let need;while(H.xp>=(need=Math.round(30*Math.pow(H.lv,1.5)))&&H.lv<20){H.xp-=need;H.lv++;H.hp=maxHp();H.mp=maxMp();text(P.x,P.y-30,'LEVEL '+H.lv+'!','#8cff8c');burst(P.x,P.y-10,24,'#fff',3)}buildSk()}
-function hurt(d){if(H.inv>0||H.dead)return;window.AETH_AUDIO&&window.AETH_AUDIO.hit();const s=stats();if(ci==16&&Math.random()<.15){H.dodge=3;text(P.x,P.y-30,'LUPUT','#9ff');return}
+function hurt(d){if(H.inv>0||H.dead||window.dashActive)return;window.AETH_AUDIO&&window.AETH_AUDIO.hit();const s=stats();if(ci==16&&Math.random()<.15){H.dodge=3;text(P.x,P.y-30,'LUPUT','#9ff');return}
  d=Math.round(d/s.def*(H.shield>0?.4:1));H.hp-=d;H.inv=.6;text(P.x,P.y-28,'-'+d,'#ff6a6a');burst(P.x,P.y-10,8,'#f55');
  if(H.hp<=0){H.hp=0;H.dead=1;msg('<b>KAMU KALAH…</b><br><button id="rv">BANGKIT</button>');$('rv').onclick=()=>{H.dead=0;H.hp=maxHp();H.mp=maxMp();P.x=start.x;P.y=start.y;msg()}}}
 /* ---- serangan senjata ---- */
 function target(r){let b=null,bd2=r;M.forEach(m=>{if(m.dead)return;const d=dist(m,P);if(d<bd2){bd2=d;b=m}});return b}
-function attack(){if(H.cd>0||H.at>=0||H.dead)return;const s=stats(),t=target(130);if(t)H.dir=t.x>=P.x?1:-1;
+function attack(){if(H.cd>0||H.at>=0||H.dead)return;const s=stats(),t=target(155);H.target=t||null;if(t)H.dir=t.x>=P.x?1:-1;
  H.at=0;H.hit=0;window.AETH_AUDIO&&window.AETH_AUDIO.attack(CH[1],CH[2]);H.dur=Math.max(.16,1/(WPN.s*60));H.cd=Math.max(H.dur*1.2,.3)/s.as*s.cdm}
-function strike(){const s=stats(),base=bd()*(1+(.09-WPN.s)*6);H.hit=1;burst(P.x+H.dir*(WPN.R||42)*.55,P.y-18,HEAVY?18:10,EC[1],HEAVY?3:2.1);
+function strike(){const s=stats(),base=bd()*(1+(.09-WPN.s)*6);H.hit=1;const lock=H.target&&!H.target.dead&&dist(H.target,P)<(WPN.R||54)+34?H.target:null;burst(P.x+H.dir*(WPN.R||42)*.55,P.y-18,HEAVY?18:10,EC[1],HEAVY?3:2.1);
  if(WPN.R){const R=WPN.R*s.rng*s.area*.9,x=P.x+H.dir*R*.4,y=P.y-14;
   for(let i=0;i<16;i++){const a=-1.4+i/15*2.8;PT.push({x:P.x+H.dir*Math.cos(a)*R*.8,y:y+Math.sin(a)*R*.5,vx:H.dir*.3,vy:0,l:.25,c:i%2?EC[0]:EC[1]})}
-  M.forEach(m=>{if(m.dead)return;const dx=(m.x-P.x)*H.dir;if((SPIN?Math.abs(dx)<R:dx>-8&&dx<R)&&Math.abs(m.y-P.y)<26+(SPIN?R*.4:0))deal(m,base)})}
- if(WPN.proj){const n=WPN.proj=='knives'?3:1;for(let k=0;k<n;k++)PR.push({x:P.x+H.dir*10,y:P.y-16,vx:H.dir*(WPN.proj=='bolt'?190:150),vy:n>1?(k-1)*22:0,dmg:base,pier:ci==14?2:1,bn:ci==15?3:0,bc:0,life:1.1,hit:new Set,k:WPN.proj})}
+  const hitSet=new Set();M.forEach(m=>{if(m.dead)return;const dx=(m.x-P.x)*H.dir;if((SPIN?Math.abs(dx)<R:dx>-8&&dx<R)&&Math.abs(m.y-P.y)<26+(SPIN?R*.4:0)){deal(m,base);hitSet.add(m)}});if(lock&&!hitSet.has(lock))deal(lock,base)}
+ if(WPN.proj){const n=WPN.proj=='knives'?3:1;const aim=lock?Math.atan2(lock.y-16-(P.y-16),lock.x-P.x):(H.dir>0?0:Math.PI);for(let k=0;k<n;k++){const ang=aim+(n>1?(k-1)*.13:0),spd=WPN.proj=='bolt'?190:150;PR.push({x:P.x+H.dir*10,y:P.y-16,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,dmg:base,pier:ci==14?2:1,bn:ci==15?3:0,bc:0,life:1.1,hit:new Set,k:WPN.proj})}}
  if(WPN.sh)sh=WPN.sh}
 let sh=0;
 /* ---- skill ---- */
@@ -114,7 +114,7 @@ window.drawHero=(g,x,y,p)=>{
  g.globalAlpha=.3;g.fillStyle='#000';g.fillRect(x-8,y-2,16,3);g.globalAlpha=1;
  if(H.shield>0){g.globalAlpha=.35;g.fillStyle='#8cf';g.beginPath();g.arc(x,y-12,15,0,6.28);g.fill();g.globalAlpha=1}
  g.save();g.translate(x,y);g.scale(H.dir,1);
- g.drawImage(hf(p.mv&&H.at<0?Math.floor(tmx*8)%4:-1,H.at),-24,-33,64,40);
+ g.drawImage(hf(p.mv&&H.at<0?Math.floor(p.st*1.3)%4:-1,H.at),-24,-33,64,40);
  /* Jejak serangan berbeda menurut keluarga senjata. */
  if(H.at>=0){
   const t=H.at,fade=Math.sin(Math.min(1,t)*Math.PI),cx=12,cy=-18;
@@ -163,7 +163,7 @@ function hud(){$('hp').style.width=H.hp/maxHp()*100+'%';$('mp').style.width=H.mp
 /* ---- mulai ---- */
 addEventListener('keydown',e=>{if(/^Digit[1-5]$/.test(e.code))cast(+e.code[5]-1);if(e.code=='Space')e.preventDefault()});
 const hold=(id,k)=>{const b=$(id);b.onpointerdown=e=>{e.preventDefault();window[k]=1};['pointerup','pointerleave','pointercancel'].forEach(v=>b.addEventListener(v,()=>window[k]=0))};
-hold('atk','aDown');hold('grd','gDown');if(ci==19)$('grd').style.display='block';
+hold('atk','aDown');hold('grd','gDown');const db=$('dash');if(db){db.onpointerdown=e=>{e.preventDefault();window.dashRequest=1;window.AETH_AUDIO&&window.AETH_AUDIO.ui()}}if(ci==19)$('grd').style.display='block';
 $('bx').onclick=()=>{location.href='index.html'};
 $('nm').textContent=CH[0]+' · '+CH[1];
 window.AETH_AUDIO&&window.AETH_AUDIO.playMusic('game');window.worldStart();start={x:P.x,y:P.y};spawnAll();buildSk();
